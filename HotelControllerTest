@@ -1,0 +1,113 @@
+package Hotel;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+
+import java.time.LocalDate;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+class HotelControllerTest {
+
+    private searchInterface mockSearchInterface;
+    private HotelController hotelController;
+
+    @BeforeEach
+    void setUp() {
+        // Mock the searchInterface
+        mockSearchInterface = new Mock(); // Use your Mock class here
+        hotelController = new HotelController(mockSearchInterface);
+    }
+    @AfterEach
+    void tearDown() {
+        hotelController = null;
+    }
+
+    @Test
+    void testSuccessfulHotelSearch() {
+        // Arrange
+        LocalDate arrival = LocalDate.now().plusDays(1); // Tomorrow
+        LocalDate departure = LocalDate.now().plusDays(3); // 3 days from now
+        String location = "TestLocation";
+        Integer maxPrice = 200;
+
+        // Act
+        HotelRoom[] results = hotelController.getSearchResults(location, arrival, departure, maxPrice);
+
+        // Assert
+        assertNotNull(results);
+
+        assertEquals(3, results.length);// Expecting 3 results as defined in our Mock class
+    }
+
+      
+    @Test
+    void testNoHotelsFound() {
+      LocalDate arrival = LocalDate.now().plusDays(1);
+      LocalDate departure = LocalDate.now().plusDays(3);
+      String location = "LocationWithNoHotels";
+      Integer maxPrice = 100;
+
+      HotelRoom[] results = hotelController.getSearchResults(location, arrival, departure, maxPrice);
+
+      assertNotNull(results);
+      assertEquals(0, results.length); // Expecting no results
+}
+
+
+    @Test
+    void testSearchWithInvalidInput() {
+        LocalDate arrival = LocalDate.now().minusDays(1); // Past date
+        LocalDate departure = LocalDate.now().plusDays(3);
+        String location = "TestLocation";
+        Integer maxPrice = 200;
+
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            hotelController.getSearchResults(location, arrival, departure, maxPrice);
+        });
+
+        String expectedMessage = "Arrival date should be before departure date and the current date";
+        String actualMessage = exception.getMessage();
+
+        assertTrue(actualMessage.contains(expectedMessage));
+    }
+
+    @Test
+    void testFilterByMaxPrice() {
+        LocalDate arrival = LocalDate.now().plusDays(1);
+        LocalDate departure = LocalDate.now().plusDays(3);
+        String location = "TestLocation";
+        Integer maxPrice = 250; // Price that excludes the most expensive options
+
+        HotelRoom[] results = hotelController.getSearchResults(location, arrival, departure, maxPrice);
+
+        assertNotNull(results);
+        assertEquals(1, results.length); // Expecting only the "Palla Pleis" hotel
+        assertEquals("Palla Pleis", results[0].getHotelName());
+}
+
+    @Test
+    void testSearchWithInvalidDateRange() {
+        LocalDate arrival = LocalDate.now().plusDays(3); // Supposed to be after the departure date
+        LocalDate departure = LocalDate.now().plusDays(1); // Before the arrival date
+        String location = "TestLocation";
+        Integer maxPrice = 200;
+
+        // Expect an IllegalArgumentException because the arrival date is after the departure date
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            hotelController.getSearchResults(location, arrival, departure, maxPrice);
+        });
+
+        // Check that the exception message contains the expected text
+        String expectedMessage = "Arrival date should be before departure date and the current date";
+        String actualMessage = exception.getMessage();
+
+        assertTrue(actualMessage.contains(expectedMessage), "The exception message should indicate the arrival date is incorrectly after the departure date");
+  }
+
+
+
+
+}
